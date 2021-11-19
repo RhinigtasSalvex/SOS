@@ -40,9 +40,10 @@ class SolveTSPUsingACO:
                     return unvisited_node
 
         def find_tour(self):
-            self.tour = [random.randint(0, self.num_nodes - 1)]
+            self.tour = [0]
             while len(self.tour) < self.num_nodes:
                 self.tour.append(self._select_node())
+            self.tour.append(0)
             return self.tour
 
         def get_distance(self):
@@ -156,29 +157,13 @@ class SolveTSPUsingACO:
         print('Total distance travelled to complete the tour : {0}\n'.format(round(self.global_best_distance, 2)))
         return self.steps, self.all_global_best_distance, self.global_best_tour, self.global_best_distance, self.nodes
 
-    def plot2(self, line_width=1, point_radius=math.sqrt(2.0), annotation_size=8, dpi=120, save=True, name=None):
-        x = [self.nodes[i][0] for i in self.global_best_tour]
-        x.append(x[0])
-        y = [self.nodes[i][1] for i in self.global_best_tour]
-        y.append(y[0])
-        plt.plot(x, y, linewidth=line_width)
-        plt.scatter(x, y, s=math.pi * (point_radius ** 2.0))
-        plt.title(self.mode)
-        for i in self.global_best_tour:
-            plt.annotate(self.labels[i], self.nodes[i], size=annotation_size)
-        if save:
-            if name is None:
-                name = '{0}.png'.format(self.mode)
-            plt.savefig(name, dpi=dpi)
-        plt.show()
-        plt.gcf().clear()
-
 
 if __name__ == '__main__':
     _colony_size = 5
     _steps = 300
     _nodes = cityCoordinates()
     #acs = SolveTSPUsingACO(mode='ACS', colony_size=_colony_size, steps=_steps, nodes=_nodes)
+    #steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = acs.run()
     ##plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
 
     elitist = SolveTSPUsingACO(mode='Elitist', colony_size=_colony_size, steps=_steps, nodes=_nodes)

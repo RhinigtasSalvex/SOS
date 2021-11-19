@@ -19,6 +19,8 @@ def plot_GA(generation, allBestFitness, bestGenome, cityLoc):
         else:
             plt.scatter(x, y, c="black")
 
+    print(bestGenome.chromosomes)
+
     xx = [cityLoc[i][0] for i in bestGenome.chromosomes]
     yy = [cityLoc[i][1] for i in bestGenome.chromosomes]
 
