@@ -1,12 +1,13 @@
+import time
 import numpy as np
 import random
 import math
 from visualize import plot_GA
-from cities import cityCoordinates, generateCities
+from cities import cityCoordinates, generateCities_dense, generateCities
 
 MUTATION_RATE = 60
 MUTATION_REPEAT_COUNT = 2
-WEAKNESS_THRESHOLD = 850
+WEAKNESS_THRESHOLD = 200
 
 # Begin and end point is first city
 cityCoordinates = cityCoordinates()
@@ -134,6 +135,7 @@ def GeneticAlgorithm(popSize, maxGeneration):
     allBestFitness = []
     population = CreateNewPopulation(popSize)
     generation = 0
+    bestGenome = None
     while generation < maxGeneration:
         generation += 1
 
@@ -144,22 +146,27 @@ def GeneticAlgorithm(popSize, maxGeneration):
 
         # Kill weakness person
         for genom in population:
-            if genom.fitness > WEAKNESS_THRESHOLD:
+            if genom.fitness < WEAKNESS_THRESHOLD:
                 population.remove(genom)
 
-        averageFitness = round(np.sum([genom.fitness for genom in population]) / len(population), 2)
-        bestGenome = findBestGenome(population)
-        print("\n" * 5)
-        print("Generation: {0}\nPopulation Size: {1}\t Average Fitness: {2}\nBest Fitness: {3}"
-              .format(generation, len(population), averageFitness,
-                      bestGenome.fitness))
+        #averageFitness = round(np.sum([genom.fitness for genom in population]) / len(population), 2)
+        bestStepGenome = findBestGenome(population)
+        if bestGenome is None:
+            bestGenome = bestStepGenome
+        elif bestStepGenome.fitness > bestGenome.fitness:
+            bestGenome = findBestGenome(population)
 
-        allBestFitness.append(bestGenome.fitness)
+        allBestFitness.append(bestStepGenome.fitness)
 
     # Visualize
+    print("Population Size: {0}\t Maximum minimum edge: {1}"
+          .format(len(population), bestGenome.fitness))
     plot_GA(generation, allBestFitness, bestGenome, cityCoordinates)
 
 
 if __name__ == "__main__":
-    #generateCities(30)
+    #generateCities(50)
+    begin = time.time()
     GeneticAlgorithm(popSize=100, maxGeneration=300)
+    end = time.time()
+    print("Runtime:\t", (end - begin))

@@ -1,5 +1,7 @@
 import math
 import random
+import time
+
 from matplotlib import pyplot as plt
 from cities import cityCoordinates
 from visualize import plot_ACO
@@ -161,7 +163,8 @@ class SolveTSPUsingACO:
 
 
 if __name__ == '__main__':
-    _colony_size = 5
+    begin = time.time()
+    _colony_size = 25
     _steps = 300
     _nodes = cityCoordinates()
     #acs = SolveTSPUsingACO(mode='ACS', colony_size=_colony_size, steps=_steps, nodes=_nodes)
@@ -175,4 +178,6 @@ if __name__ == '__main__':
     max_min = SolveTSPUsingACO(mode='MaxMin', colony_size=_colony_size, steps=_steps, nodes=_nodes)
     steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = max_min.run()
     plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
+    end = time.time()
+    print("Runtime:\t", (end - begin))
 

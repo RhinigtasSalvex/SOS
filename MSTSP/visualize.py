@@ -28,15 +28,16 @@ def plot_GA(generation, allBestFitness, bestGenome, cityLoc):
         plt.text(x + 2, y - 2, str(yy.index(y)), color="green", fontsize=10)
 
     plt.plot(xx, yy, color="red", linewidth=1.75, linestyle="-")
+    #plt.savefig("GA")
     plt.show()
 
 
 def plot_ACO(steps, all_global_best_distance, global_best_tour, global_best_distance, nodes):
     plt.subplot(2, 1, 1)
-    # plt.text((steps / 2) - 0.5, all_global_best_distance[0] + 10, "Generation: {0} Best Fitness: {1}".format(
-    #     steps, global_best_distance), ha='center', va='bottom')
-    print(all_global_best_distance)
-    print(steps)
+    plt.text((steps / 2) - 0.5, all_global_best_distance[0] + 10, "Generation: {0} Best Fitness: {1}".format(
+        steps, global_best_distance), ha='center', va='bottom')
+    #print(all_global_best_distance)
+    #print(steps)
     plt.plot(range(0, steps), all_global_best_distance, c="green")
     plt.subplot(2, 1, 2)
 
@@ -56,4 +57,5 @@ def plot_ACO(steps, all_global_best_distance, global_best_tour, global_best_dist
         plt.text(x + 2, y - 2, str(yy.index(y)), color="green", fontsize=10)
 
     plt.plot(xx, yy, color="red", linewidth=1.75, linestyle="-")
+    #plt.savefig("ACO")
     plt.show()
