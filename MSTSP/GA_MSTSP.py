@@ -2,7 +2,7 @@ import numpy as np
 import random
 import math
 from visualize import plot_GA
-from cities import cityCoordinates
+from cities import cityCoordinates, generateCities
 
 MUTATION_RATE = 60
 MUTATION_REPEAT_COUNT = 2
@@ -16,7 +16,7 @@ citySize = len(cityCoordinates)
 
 class Genome():
     chromosomes = []
-    fitness = 9999
+    fitness = 0
 
 
 def CreateNewPopulation(size):
@@ -38,18 +38,19 @@ def distance(a, b):
 
 
 def Evaluate(chromosomes):
-    calculatedFitness = 0
+    calculatedFitness = float("inf")
     for i in range(len(chromosomes) - 1):
         p1 = cityCoordinates[chromosomes[i]]
         p2 = cityCoordinates[chromosomes[i + 1]]
-        calculatedFitness += distance(p1, p2)
+        if (distance(p1, p2) < calculatedFitness):
+            calculatedFitness = distance(p1, p2)
     calculatedFitness = np.round(calculatedFitness, 2)
     return calculatedFitness
 
 
 def findBestGenome(population):
     allFitness = [i.fitness for i in population]
-    bestFitness = min(allFitness)
+    bestFitness = max(allFitness)
     return population[allFitness.index(bestFitness)]
 
 
@@ -160,4 +161,5 @@ def GeneticAlgorithm(popSize, maxGeneration):
 
 
 if __name__ == "__main__":
+    #generateCities(30)
     GeneticAlgorithm(popSize=100, maxGeneration=300)

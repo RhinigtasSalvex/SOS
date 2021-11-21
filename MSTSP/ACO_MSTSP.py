@@ -20,7 +20,7 @@ class SolveTSPUsingACO:
             self.num_nodes = num_nodes
             self.edges = edges
             self.tour = None
-            self.distance = 0.0
+            self.smallest_edge = 0.0
 
         def _select_node(self):
             roulette_wheel = 0.0
@@ -30,12 +30,12 @@ class SolveTSPUsingACO:
                 heuristic_total += self.edges[self.tour[-1]][unvisited_node].weight
             for unvisited_node in unvisited_nodes:
                 roulette_wheel += pow(self.edges[self.tour[-1]][unvisited_node].pheromone, self.alpha) * \
-                                  pow((heuristic_total / self.edges[self.tour[-1]][unvisited_node].weight), self.beta)
+                                  pow((self.edges[self.tour[-1]][unvisited_node].weight / heuristic_total), self.beta)
             random_value = random.uniform(0.0, roulette_wheel)
             wheel_position = 0.0
             for unvisited_node in unvisited_nodes:
                 wheel_position += pow(self.edges[self.tour[-1]][unvisited_node].pheromone, self.alpha) * \
-                                  pow((heuristic_total / self.edges[self.tour[-1]][unvisited_node].weight), self.beta)
+                                  pow((self.edges[self.tour[-1]][unvisited_node].weight / heuristic_total), self.beta)
                 if wheel_position >= random_value:
                     return unvisited_node
 
@@ -46,11 +46,13 @@ class SolveTSPUsingACO:
             self.tour.append(0)
             return self.tour
 
-        def get_distance(self):
-            self.distance = 0.0
+        def get_smallest_edge(self):
+            self.smallest_edge = float("inf")
             for i in range(self.num_nodes):
-                self.distance += self.edges[self.tour[i]][self.tour[(i + 1) % self.num_nodes]].weight
-            return self.distance
+                d = self.edges[self.tour[i]][self.tour[(i + 1) % self.num_nodes]].weight
+                if (d < self.smallest_edge):
+                    self.smallest_edge = d
+            return self.smallest_edge
 
     def __init__(self, mode='ACS', colony_size=10, elitist_weight=1.0, min_scaling_factor=0.001, alpha=1.0, beta=3.0,
                  rho=0.1, pheromone_deposit_weight=1.0, initial_pheromone=1.0, steps=100, nodes=None, labels=None):
@@ -76,8 +78,8 @@ class SolveTSPUsingACO:
         self.ants = [self.Ant(alpha, beta, self.num_nodes, self.edges) for _ in range(self.colony_size)]
         self.all_global_best_distance = []
         self.global_best_tour = None
-        self.step_best_distance = float("inf")
-        self.global_best_distance = float("inf")
+        self.step_max_smallest = 0
+        self.global_max_smallest = 0
 
     def _add_pheromone(self, tour, distance, weight=1.0):
         pheromone_to_add = self.pheromone_deposit_weight / distance
@@ -87,31 +89,31 @@ class SolveTSPUsingACO:
     def _acs(self):
         # self.step same as generation in GA_MSTSP
         for step in range(self.steps):
-            self.step_best_distance = float("inf")
+            self.step_max_smallest = 0
             for ant in self.ants:
-                self._add_pheromone(ant.find_tour(), ant.get_distance())
-                if ant.distance < self.global_best_distance:
+                self._add_pheromone(ant.find_tour(), ant.get_smallest_edge())
+                if ant.smallest_edge > self.global_max_smallest:
                     self.global_best_tour = ant.tour
-                    self.global_best_distance = ant.distance
-                if ant.distance < self.step_best_distance:
-                    self.step_best_distance = ant.distance
-            self.all_global_best_distance.append(self.step_best_distance)
+                    self.global_max_smallest = ant.smallest_edge
+                if ant.smallest_edge > self.step_max_smallest:
+                    self.step_max_smallest = ant.smallest_edge
+            self.all_global_best_distance.append(self.step_max_smallest)
             for i in range(self.num_nodes):
                 for j in range(i + 1, self.num_nodes):
                     self.edges[i][j].pheromone *= (1.0 - self.rho)
 
     def _elitist(self):
         for step in range(self.steps):
-            self.step_best_distance = float("inf")
+            self.step_max_smallest = 0
             for ant in self.ants:
-                self._add_pheromone(ant.find_tour(), ant.get_distance())
-                if ant.distance < self.global_best_distance:
+                self._add_pheromone(ant.find_tour(), ant.get_smallest_edge())
+                if ant.smallest_edge > self.global_max_smallest:
                     self.global_best_tour = ant.tour
-                    self.global_best_distance = ant.distance
-                if ant.distance < self.step_best_distance:
-                    self.step_best_distance = ant.distance
-            self.all_global_best_distance.append(self.step_best_distance)
-            self._add_pheromone(self.global_best_tour, self.global_best_distance, weight=self.elitist_weight)
+                    self.global_max_smallest = ant.smallest_edge
+                if ant.smallest_edge > self.step_max_smallest:
+                    self.step_max_smallest = ant.smallest_edge
+            self.all_global_best_distance.append(self.step_max_smallest)
+            self._add_pheromone(self.global_best_tour, self.global_max_smallest, weight=self.elitist_weight)
             for i in range(self.num_nodes):
                 for j in range(i + 1, self.num_nodes):
                     self.edges[i][j].pheromone *= (1.0 - self.rho)
@@ -119,22 +121,22 @@ class SolveTSPUsingACO:
     def _max_min(self):
         for step in range(self.steps):
             iteration_best_tour = None
-            iteration_best_distance = float("inf")
+            iteration_best_distance = 0
             for ant in self.ants:
                 ant.find_tour()
-                if ant.get_distance() < iteration_best_distance:
+                if ant.get_smallest_edge() > iteration_best_distance:
                     iteration_best_tour = ant.tour
-                    iteration_best_distance = ant.distance
+                    iteration_best_distance = ant.smallest_edge
             self.all_global_best_distance.append(iteration_best_distance)
             if float(step + 1) / float(self.steps) <= 0.75:
                 self._add_pheromone(iteration_best_tour, iteration_best_distance)
                 max_pheromone = self.pheromone_deposit_weight / iteration_best_distance
             else:
-                if iteration_best_distance < self.global_best_distance:
+                if iteration_best_distance > self.global_max_smallest:
                     self.global_best_tour = iteration_best_tour
-                    self.global_best_distance = iteration_best_distance
-                self._add_pheromone(self.global_best_tour, self.global_best_distance)
-                max_pheromone = self.pheromone_deposit_weight / self.global_best_distance
+                    self.global_max_smallest = iteration_best_distance
+                self._add_pheromone(self.global_best_tour, self.global_max_smallest)
+                max_pheromone = self.pheromone_deposit_weight / self.global_max_smallest
             min_pheromone = max_pheromone * self.min_scaling_factor
             for i in range(self.num_nodes):
                 for j in range(i + 1, self.num_nodes):
@@ -154,8 +156,8 @@ class SolveTSPUsingACO:
             self._max_min()
         print('Ended : {0}'.format(self.mode))
         print('Sequence : <- {0} ->'.format(' - '.join(str(self.labels[i]) for i in self.global_best_tour)))
-        print('Total distance travelled to complete the tour : {0}\n'.format(round(self.global_best_distance, 2)))
-        return self.steps, self.all_global_best_distance, self.global_best_tour, self.global_best_distance, self.nodes
+        print('Max minimum : {0}\n'.format(round(self.global_max_smallest, 2)))
+        return self.steps, self.all_global_best_distance, self.global_best_tour, self.global_max_smallest, self.nodes
 
 
 if __name__ == '__main__':
@@ -164,13 +166,13 @@ if __name__ == '__main__':
     _nodes = cityCoordinates()
     #acs = SolveTSPUsingACO(mode='ACS', colony_size=_colony_size, steps=_steps, nodes=_nodes)
     #steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = acs.run()
-    ##plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
-
-    elitist = SolveTSPUsingACO(mode='Elitist', colony_size=_colony_size, steps=_steps, nodes=_nodes)
-    steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = elitist.run()
-    plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
-
-    #max_min = SolveTSPUsingACO(mode='MaxMin', colony_size=_colony_size, steps=_steps, nodes=_nodes)
-    #steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = max_min.run()
     #plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
+
+    #elitist = SolveTSPUsingACO(mode='Elitist', colony_size=_colony_size, steps=_steps, nodes=_nodes)
+    #steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = elitist.run()
+    #plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
+
+    max_min = SolveTSPUsingACO(mode='MaxMin', colony_size=_colony_size, steps=_steps, nodes=_nodes)
+    steps, all_global_best_tour, global_best_tour, global_best_distance, nodes = max_min.run()
+    plot_ACO(steps, all_global_best_tour, global_best_tour, global_best_distance, nodes)
 
