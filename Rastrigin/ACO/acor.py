@@ -11,8 +11,12 @@ import sys
 import shutil
 import numpy as np
 import random
-from time import time
+from time import time, process_time
 import multiprocessing
+import sys
+sys.stdout = open('C:\\Users\\Maxim\\Documents\\Uni\\11. Semester\\SOS\\SOS\\Rastrigin\\ACO\\out.txt', 'w')
+# sys.stdout = open('./ACO/out.txt', 'w')
+
 import datetime
 import math
 from scipy.stats import norm
@@ -21,6 +25,9 @@ from matplotlib import cm
 from collections import defaultdict
 from operator import itemgetter
 import csv
+
+def map_range(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 def rastrigin(X):
     A = 10.0 
@@ -34,7 +41,7 @@ def evaluator(X):
     # give the normalized candidates values inside the real design space for Styblinski–Tang function
     # x = [10*i-5 for i in X]
     # give the normalized candidates values inside the real design space for rastrigin function
-    # X = [10.12*i-5.12 for i in X]
+    # X = [map_range(x, 0, 1, -5.12, 5.12) for x in X]
 
     # calculate fitness for Styblinski–Tang function
     # f = (sum([math.pow(i,4)-16*math.pow(i,2)+5*i for i in x])/2)
@@ -45,7 +52,8 @@ def evaluator(X):
     # calculate values for other responses for Styblinski–Tang function
     # res = {'r1':f-5,'r2':2*f}
     # calculate values for other responses for rastrigin function
-    res = {'r1':f-5.12,'r2':2*f}
+    # res = {f"r{i+1}": f-5.12 for i in range(len(X))}
+    res = {f"r{i+1}": f for i in range(len(X))}
     # res = {}
 
     fitness = dict(Obj=f,**res)
@@ -171,7 +179,6 @@ def correct_par(filename,par):
         file.write('{0}\n'.format(', '.join(map(str, line))))
     file.close()
 
-
 def formatTD(td):
     """ Format time output for report"""
     days = td.days
@@ -209,40 +216,72 @@ def plot_rastrigin_function_3d(projdir):
     plt.show()
     plt.savefig('{0}/rastrigin_3d.png'.format(projdir))
 
+def plot_fitness_results(mean_fitness, max_fitness, iterations, save_plot=False, path=None, solver=None):
+        """
+        Plots the evolution of the mean and max fitness of the population
+
+        :param mean_fitness: mean fitness array for each generation
+        :param max_fitness: max fitness array for each generation
+        :param iterations: total number of generations
+        :return: None
+        """
+        if solver is not None:
+            mean_fitness = solver["mean_fitness"]
+            max_fitness = solver["max_fitness"]
+            iterations = solver["max_gen"]
+        plt.figure(figsize=(7, 7))
+
+        x = np.arange(1, iterations + 1)
+
+        plt.plot(x, mean_fitness, label="mean fitness")
+        plt.plot(x, max_fitness, label="max fitness")
+        if solver:
+            plt.title(f"Fitness Evolution\nVariables: {solver['vars']} Population: {solver['pop']} Evaporation: {solver['evap']}")
+        plt.legend()
+        if save_plot:
+            if solver:
+                plt.savefig(f"{path}fitness_evolution_v{solver['vars']}_p{solver['pop']}_e{solver['evap']}_mg{solver['max_gen']}.png")
+            else:
+                plt.savefig(f"{path}fitness_evolution.png")
+        else:
+            plt.show()
 
 
-def evolve(display):
-    '''Executes the optimization'''
+def evolve(parameters=1, nSize=100, nAnts=100, q=0.3, xi=0.65, maxiter=100, display=False, verbose=False):
+    '''
+    Executes the optimization
+    
+    '''
     start_time = time()
-
     # number of variables
-    parameters_v = ['x1', 'x2']
+    parameters_v = [f"x{i}" for i in range(1,parameters+1)]
     # response_v = []
-    response_v = ['r1','r2']
+    response_v = [f"r{i}" for i in range(1,parameters+1)]
 
-    # create output file
-    projdir = os.getcwd()
-    ind_file_name = '{0}/results.csv'.format(projdir)
-    ind_file = open(ind_file_name, 'w')
+    if verbose:
+        # create output file
+        projdir = os.getcwd()
+        ind_file_name = '{0}/results.csv'.format(projdir)
+        ind_file = open(ind_file_name, 'w')
 
     # number of variables
     nVar = len(parameters_v)
     # size of solution archive
-    nSize = 100
+    # nSize = 100
     # number of ants
-    nAnts = 100
+    # nAnts = 100
 
     # parameter q
-    q = 0.3
+    # q = 0.3
 
     # standard deviation
     qk = q*nSize
 
     # parameter xi (like pheromone evaporation)
-    xi = 0.65
+    # xi = 0.65
 
     # maximum iterations
-    maxiter = 300
+    # maxiter = 200
     # tolerance
     errormin = 0.01
 
@@ -258,9 +297,10 @@ def evolve(display):
     # plt.figure()
 
     # initialize the solution table with uniform random distribution and sort it
-    print('-----------------------------------------')
-    print('Starting initilization of solution matrix')
-    print('-----------------------------------------')
+    if verbose:
+        print('-----------------------------------------')
+        print('Starting initilization of solution matrix')
+        print('-----------------------------------------')
 
     Srand = initialize(nSize,nVar)
     f,S_r,maximize = mp_evaluator(Srand)
@@ -281,7 +321,7 @@ def evolve(display):
     S = sorted(S, key=lambda row: row[-1],reverse = maximize)
     S = np.array(S)
 
-    init_observer(ind_file,S,parameters_v,response_v)
+    # init_observer(ind_file,S,parameters_v,response_v)
 
     # initilize weight array with pdf function
     w = np.zeros((nSize))
@@ -315,14 +355,17 @@ def evolve(display):
     best_sol.append(S[0][:])
     best_res.append(S[0][nVar:-1])
     worst_obj.append(S[-1][-1])
+    mean_fitness = np.ndarray(shape=(1, 0))
+    max_fitness = np.ndarray(shape=(1, 0))
 
     stop = 0
 
     # iterations
     while True:
-        print('-----------------------------------------')
-        print('Iteration', iterations)
-        print('-----------------------------------------')
+        if verbose:
+            print('-----------------------------------------')
+            print('Iteration', iterations)
+            print('-----------------------------------------')
         # choose Gaussian function to compose Gaussian kernel
         p = w/sum(w)
 
@@ -352,6 +395,8 @@ def evolve(display):
                 elif Stemp[k][i] < Lo[i]:
                     Stemp[k][i] = Lo[i]
         f,S_r,maximize = mp_evaluator(Stemp)
+        mean_fitness = np.append(mean_fitness, np.mean(f))
+        max_fitness = np.append(max_fitness, np.min(f))
 
         S_f = np.zeros((nAnts,1))
         S_responses = []
@@ -384,7 +429,8 @@ def evolve(display):
         best_sol.append(S[0][:])
         worst_obj.append(S[-1][-1])
 
-        iter_observer(ind_file,S,parameters_v,response_v,iterations)
+        if verbose:
+            iter_observer(ind_file,S,parameters_v,response_v,iterations)
 
         if display:
             # plot new table
@@ -411,41 +457,60 @@ def evolve(display):
         else:
             if display:
                 plt.cla()
-
-    ind_file.close()
+    if verbose:
+        ind_file.close()
 
     total_time_s = time() - start_time
     total_time = datetime.timedelta(seconds=total_time_s)
     total_time = formatTD(total_time)
 
-    # fix varibales values in output file
-    correct_par(ind_file_name,parameters_v)
+    if verbose:
+        # fix varibales values in output file
+        correct_par(ind_file_name,parameters_v)
 
     best_sol = sorted(best_sol, key=lambda row: row[-1],reverse = maximize)
 
-    print("Best individual:", parameters_v)
-    print(best_sol[0][0:len(parameters_v)])
-    print("Fitness:")
-    print(best_sol[0][-1])
-    print("Responses:", response_v)
-    print(best_sol[0][len(parameters_v):-1])
-
+    print("Best individual: ", best_sol[0][0:len(parameters_v)])
+    print("Fitness: ", best_sol[0][-1])
+    # print("Responses:", response_v)
+    # print(best_sol[0][len(parameters_v):-1])
+    return best_sol, mean_fitness, max_fitness, iterations
 
 
 if (__name__=="__main__"):
-    path = os.getcwd()
-    # get folder name from input
-    case = str(sys.argv[1])
-    if os.path.exists(path+'/'+case):
-        print('Folder already exists, deleting it')
-        # input('Folder exists! Press enter to delete it and continue')
-        shutil.rmtree(path+'/'+case)
-    os.mkdir(path+'/'+case)
-    os.chdir(path+'/'+case)
+    # path = os.getcwd()
+    # # get folder name from input
+    # case = str(sys.argv[1])
+    # if os.path.exists(path+'/'+case):
+    #     print('Folder already exists, deleting it\n')
+    #     # input('Folder exists! Press enter to delete it and continue')
+    #     shutil.rmtree(path+'/'+case)
+    # os.mkdir(path+'/'+case)
+    # os.chdir(path+'/'+case)
 
     projdir = os.getcwd()
     # plot_rastrigin_function_2d(projdir)
     # plot_rastrigin_function_3d(projdir)
     # Executes optimization run.
     # If display = True plots ants in 2D design space
-    evolve(display = True)
+    for g in [2, 10]:
+        for p in [10, 50, 100, 1000]:
+            for m in [100, 500]:
+                for q in [0.3, 0.5, 0.8]:
+                    for xi in [0.3, 0.5, 0.65, 0.8]:
+                        start = process_time()
+                        b, mean_fitness, max_fitness, iterations = evolve(display = False, parameters=g, nAnts=p, maxiter=m, xi=xi, q=q)
+                        elapsed_time = process_time() - start
+                        print(f"Elapsed time: {elapsed_time}")
+                        print(f"Variables: {g}, Population: {p}, Max_gen: {m}, Density: {q}, Evaporation: {xi}\n\n")
+                        solver = {
+                            'vars': g,
+                            'pop': p,
+                            'density': q,
+                            'evap': xi,
+                            'max_gen': iterations -1,
+                            'mean_fitness': mean_fitness,
+                            'max_fitness': max_fitness,
+                            }
+                        plot_fitness_results(None, None, None, solver=solver, save_plot=True, path="C:\\Users\\Maxim\\Documents\\Uni\\11. Semester\\SOS\\SOS\\Rastrigin\\ACO\\")
+
