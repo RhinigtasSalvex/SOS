@@ -1,0 +1,84 @@
+Best individual:  [0.81741492 0.23198922 0.10052094 0.99192214 0.73341467 0.97416632
+ 0.9465068  0.09349613 0.91499019 0.96895772]
+Fitness:  37.57623030029198
+Elapsed time: 5.40625
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.3, Evaporation: 0.3
+
+
+Best individual:  [0.1275606  1.         1.         0.99108435 0.32349249 1.
+ 1.         0.97003481 0.75757479 0.03568137]
+Fitness:  34.08514844649359
+Elapsed time: 4.640625
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.3, Evaporation: 0.5
+
+
+Best individual:  [0.20463372 1.         1.         0.25124177 0.12760064 0.8928877
+ 1.         1.         0.97753971 1.        ]
+Fitness:  29.465444903410372
+Elapsed time: 5.390625
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.3, Evaporation: 0.65
+
+
+Best individual:  [0.9839376  0.16549943 0.47733063 0.26432696 0.10184043 0.04767055
+ 0.16782036 1.         0.95616148 0.98721153]
+Fitness:  47.90378384444509
+Elapsed time: 5.625
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.3, Evaporation: 0.8
+
+
+Best individual:  [1.         0.81461207 0.16525419 0.19563937 0.099515   0.99367977
+ 0.12028403 0.13063751 0.99564417 0.90746077]
+Fitness:  31.65068368874236
+Elapsed time: 5.78125
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.5, Evaporation: 0.3
+
+
+Best individual:  [0.87292917 0.10750765 0.25834315 0.214766   1.         1.
+ 1.         0.21349118 0.99483091 0.95149062]
+Fitness:  37.565089069864754
+Elapsed time: 5.484375
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.5, Evaporation: 0.5
+
+
+Best individual:  [0.1400666  0.25148704 0.98326451 1.         0.9726214  0.16480001
+ 0.98508437 1.         0.179263   0.27985983]
+Fitness:  41.53709368118306
+Elapsed time: 4.46875
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.5, Evaporation: 0.65
+
+
+Best individual:  [1.         1.         1.         1.         1.         0.30793645
+ 0.15504621 1.         1.         0.30420579]
+Fitness:  38.49374661422668
+Elapsed time: 3.96875
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.5, Evaporation: 0.8
+
+
+Best individual:  [1.         0.09057597 1.         0.05473391 0.10388914 0.04356865
+ 0.88477708 0.90807607 0.96645422 0.20671687]
+Fitness:  20.86343965896687
+Elapsed time: 5.3125
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.8, Evaporation: 0.3
+
+
+Best individual:  [1.         1.         0.14559747 0.98079985 0.89135984 1.
+ 0.08977809 0.95161219 0.11656103 0.9153156 ]
+Fitness:  18.711200002394506
+Elapsed time: 5.75
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.8, Evaporation: 0.5
+
+
+Best individual:  [0.98937229 0.04394355 0.12048514 0.13019286 0.05371739 1.
+ 0.95522382 1.         0.55060243 0.98914306]
+Fitness:  31.98419157413265
+Elapsed time: 6.1875
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.8, Evaporation: 0.65
+
+
+Best individual:  [1.         0.07903964 0.87329565 0.20400074 1.         0.24986478
+ 0.16923892 1.         0.9631109  1.        ]
+Fitness:  32.59162855133083
+Elapsed time: 6.71875
+Variables: 10, Population: 1000, Max_gen: 500, Density: 0.8, Evaporation: 0.8
+
+
