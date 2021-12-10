@@ -94,9 +94,8 @@ to initialize-topology
      if fitness_function  = "Fitness function 5"
        [set val fittness_function_5 pxcor pycor]
 
-     if fitness_function = "Rastrigin function (alt)"
+     if fitness_function = "Fitness function 6"
        [set val fittness_function_6 pxcor pycor]
-
   ]
 
   let min-val min [val] of patches
@@ -105,20 +104,32 @@ to initialize-topology
   ask patches [
     ;normalize the values to be between 0 and 1
     set val (val - min-val) / (max-val - min-val)
+    ; set gray value acording to fitness
+    set pcolor scale-color gray val 0.0  1
 
-    ;check whether the patch violates a constrain
-    ;if yes set its value to zero and color to red
-    ;otherwise, set the patch color according to its value
-    ifelse  ((violates pxcor  pycor) and (constraints = TRUE))
-     [
-         set val 0
-         set pcolor 15
-     ]
+    ; check wether constraints should be applied
+    if (constraints = TRUE)
+    [
+      ; if a constraint is violated handle with constraint_handling_method
+      if ((violates pxcor  pycor))
+      [
 
-     [
-         set pcolor scale-color gray val 0.0  1
+        ; if rejection method set value to 0 and set color to red
+        if (constraint_handling_method = "Rejection Method")
+        [
+          set val 0
+          set pcolor 15
+        ]
 
-     ]
+        ; if penalty method apply penalty to value
+        if (constraint_handling_method = "Penalty Method")
+        [
+          ;set val 0
+          set val (val - r * ((violation_value pxcor  pycor)) ^ 2 )
+          set pcolor scale-color red val 0.0  1
+        ]
+      ]
+    ]
 
     ]
 
@@ -235,8 +246,6 @@ to update-particle-positions
     let x (xcor + vx)
     let y  (ycor + vy)
 
-
-
     ; The Rejection constraint handling is realized here:
     ; If a point violates a constraint, it is rejected
     ; and the velocity and position are reset to the backup values
@@ -302,14 +311,15 @@ end
 to-report fittness_function_1 [x y]
   let x1 5.12 /  max-x * x ; scale x to have a value from -5.12 to 5.12
   let y1 5.12 /  max-y * y ; scale x to have a value from -5.12 to 5.12
-  report (- (20 + (x1 ^ 2 - 10 * cos(2 * pi * x1)) + (y1 ^ 2 - 10 * cos(2 * pi * y1))) )
+  let res (- (20 + (x1 ^ 2 - 10 * cos(2 * pi * x1)) + (y1 ^ 2 - 10 * cos(2 * pi * y1))) )
+  report res
 end
 
 ; schwefel function
 to-report fittness_function_2 [x y]
   let x1 512 /  max-x * x ; scale x to have a value from -512 to 512
   let y1 512 /  max-y * y ; scale x to have a value from -512 to 512
-  report 1 - ((418.9829 * 2 - (x1 * sin(sqrt(abs(x1))) + y1 * sin(sqrt(abs(y1))))) / 837);
+  report (- (418.9829 * 2 - (x1 * sin(sqrt(abs(x1))) + y1 * sin(sqrt(abs(y1))))));
 end
 
 ; three-hump camel function
@@ -329,18 +339,24 @@ to-report fittness_function_5 [x y]
   report random-normal 0 1;
 end
 
-; alternate implementation of rastrigin funnction
+; dummy random fitness function to be implemented by students
 to-report fittness_function_6 [x y]
-  let x1 5.12 /  max-x * x ; scale x to have a value from -5.12 to 5.12
-  let y1 5.12 /  max-y * y ; scale x to have a value from -5.12 to 5.12
-  let res  (20 + (x1 ^ 2 - 10 * cos(2 * pi * x1)) + (y1 ^ 2 - 10 * cos(2 * pi * y1)))
-  report 1 - (res / 80.707) ; alternate implementation with result scaled to be between 0 1 ;
+  report random-normal 0 1;
 end
 
+to-report constraint_value [v]
+  if v = true [report -1]
+  if v = false [report 0]
+end
 
 ; constraint example
 to-report constrain_example [x y]
   report (x ^ 2 > y ^ 2)
+end
+
+; constraint value example
+to-report constrain_value_example [x y]
+  report (x ^ 2 - y ^ 2)
 end
 
 ; implmentation of constraint c8
@@ -348,9 +364,19 @@ to-report constrain_1 [x y]
   report (sin(8 * x) < sin(8 * y) )
 end
 
+; implmentation of constraint c8
+to-report constrain_value_1 [x y]
+  report (sin(8 * y) - sin(8 * x))
+end
+
 ; implmentation of constraint c5
 to-report constrain_2 [x y]
   report (x > y)
+end
+
+; implmentation of constraint c5
+to-report constrain_value_2 [x y]
+  report (x - y)
 end
 
 ; implmentation of constraint c9
@@ -358,9 +384,19 @@ to-report constrain_3 [x y]
   report sin(x) * sin(y) < 0.2
 end
 
+; implmentation of constraint c9
+to-report constrain_value_3 [x y]
+  report 0.2 - sin(x) * sin(y)
+end
+
 ; implmentation of constraint c2
 to-report constrain_4 [x y]
   report (x > 3 or y > 3)
+end
+
+; implmentation of constraint c2
+to-report constrain_value_4 [x y]
+  report ((x - 3) + (y - 3))
 end
 
 ; implmentation of constraint c6
@@ -368,9 +404,19 @@ to-report constrain_5 [x y]
   report (10 * x < y ^ 2)
 end
 
+; implmentation of constraint c6
+to-report constrain_value_5 [x y]
+  report (y ^ 2 - 10 * x)
+end
+
 ; implmentation of constraint c7
 to-report constrain_6 [x y]
-  report tan(2 * x) < tan(4 * y)
+  report (tan(2 * x) < tan(4 * y))
+end
+
+; implmentation of constraint c7
+to-report constrain_value_6 [x y]
+  report (tan(4 * y) - tan(2 * x))
 end
 
 ; dummy random constrinat to be implemented by students
@@ -398,6 +444,10 @@ to-report constrain_10 [x y]
   [report TRUE]
   [report FALSE]
 
+end
+
+to-report constrain_value_10 [x y]
+  report (1 - tan(x * y))
 end
 
 
@@ -434,6 +484,42 @@ to-report violates [x y]
 
   if ( Constraint = "Example")
   [report constrain_example x y]
+
+end
+
+to-report violation_value [x y]
+  if ( Constraint = "Constraint 1")
+  [report constrain_value_1 x y]
+
+  if ( Constraint = "Constraint 2")
+  [report constrain_value_2 x y]
+
+  if ( Constraint = "Constraint 3")
+  [report constrain_value_3 x y]
+
+  if ( Constraint = "Constraint 4")
+  [report constrain_value_4 x y]
+
+  if ( Constraint = "Constraint 5")
+  [report constrain_value_5 x y]
+
+  if ( Constraint = "Constraint 6")
+  [report constrain_value_6 x y]
+
+  if ( Constraint = "Constraint 7")
+  [report constrain_7 x y]
+
+  if ( Constraint = "Constraint 8")
+  [report constrain_8 x y]
+
+  if ( Constraint = "Constraint 9")
+  [report constrain_9 x y]
+
+  if ( Constraint = "Constraint 10")
+  [report constrain_value_10 x y]
+
+  if ( Constraint = "Example")
+  [report constrain_value_example x y]
 
 end
 
@@ -502,9 +588,9 @@ ticks
 
 BUTTON
 10
-170
+225
 95
-203
+258
 NIL
 setup
 NIL
@@ -519,9 +605,9 @@ NIL
 
 BUTTON
 410
-170
+225
 490
-203
+258
 Go
 iterate
 T
@@ -543,7 +629,7 @@ population-size
 population-size
 1
 100
-57.0
+35.0
 1
 1
 NIL
@@ -558,7 +644,7 @@ personal-confidence
 personal-confidence
 0
 2
-0.5
+0.6
 0.1
 1
 NIL
@@ -573,7 +659,7 @@ swarm-confidence
 swarm-confidence
 0
 2
-1.4
+1.8
 0.1
 1
 NIL
@@ -588,7 +674,7 @@ particle-inertia
 particle-inertia
 0
 1.0
-0.12
+0.14
 0.01
 1
 NIL
@@ -596,9 +682,9 @@ HORIZONTAL
 
 BUTTON
 320
-170
+225
 400
-203
+258
 step
 iterate
 NIL
@@ -613,9 +699,9 @@ NIL
 
 CHOOSER
 165
-455
+510
 295
-500
+555
 trails-mode
 trails-mode
 "None" "Traces"
@@ -630,7 +716,7 @@ particle-speed-limit
 particle-speed-limit
 1
 20
-12.0
+7.0
 1
 1
 NIL
@@ -638,9 +724,9 @@ HORIZONTAL
 
 CHOOSER
 10
-455
+510
 140
-500
+555
 highlight-mode
 highlight-mode
 "None" "Best found" "True best"
@@ -648,9 +734,9 @@ highlight-mode
 
 MONITOR
 320
-230
+285
 490
-275
+330
 best-value-found
 global-best-val
 4
@@ -659,9 +745,9 @@ global-best-val
 
 BUTTON
 200
-170
+225
 312
-203
+258
 Show Optimum
 show-optimum
 NIL
@@ -681,8 +767,8 @@ CHOOSER
 55
 fitness_function
 fitness_function
-"Example function" "Rastrigin function" "Schwefel function" "3-Hump Camel function" "Fitness function 4" "Fitness function 5" "Rastrigin function (alt)"
-2
+"Example function" "Rastrigin function" "Schwefel function" "3-Hump Camel function" "Fitness function 4" "Fitness function 5" "Fitness function 6"
+3
 
 SWITCH
 10
@@ -697,9 +783,9 @@ Constraints
 
 BUTTON
 105
-170
+225
 190
-203
+258
 repeat
 clear-all\nimport-world \"backup.txt\"\nupdate-highlight\nreset-ticks
 NIL
@@ -714,9 +800,9 @@ NIL
 
 MONITOR
 320
-295
+350
 490
-340
+395
 # iteration
 iterations
 0
@@ -735,9 +821,9 @@ constraint_handling_method
 
 INPUTBOX
 320
-360
+415
 420
-420
+475
 path-to-save
 filename.txt
 1
@@ -746,9 +832,9 @@ String
 
 BUTTON
 430
-360
+415
 490
-393
+448
 Save
 export-world path-to-save
 NIL
@@ -763,9 +849,9 @@ NIL
 
 BUTTON
 430
-440
 495
-473
+495
+528
 Load
 load
 NIL
@@ -780,9 +866,9 @@ NIL
 
 INPUTBOX
 320
-440
+495
 420
-500
+555
 path-to-load
 filename.txt
 1
@@ -801,9 +887,9 @@ Constraint
 
 PLOT
 10
-220
+275
 310
-440
+495
 Fittness over iterations
 Iterations
 Fittness
@@ -817,9 +903,23 @@ false
 PENS
 "default" 1.0 0 -5298144 true "" "plot global-best-val"
 
+SLIDER
+320
+170
+490
+203
+r
+r
+0
+1
+0.42
+0.01
+1
+NIL
+HORIZONTAL
+
 @#$#@#$#@
 ## WHAT IS IT?
-
 @#$#@#$#@
 default
 true
