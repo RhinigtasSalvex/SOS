@@ -329,9 +329,12 @@ to-report fittness_function_3 [x y]
   report ( - (2 * x1 ^ 2 - 1.05 * x1 ^ 4 + (x1 ^ 6) / 6 + x1 * y1 + y1 ^ 2));
 end
 
-; dummy random fitness function to be implemented by students
+; booth's function
 to-report fittness_function_4 [x y]
-  report random-normal 0 1;
+  let x1 10 /  max-x * x ; scale x to have a value from -5.12 to 5.12
+  let y1 10 /  max-y * y ; scale x to have a value from -5.12 to 5.12
+  let res ( - ((x1 + 2 * y1 - 7 ) ^ 2 + (2 * x1 + y1 - 5) ^ 2))
+  report res
 end
 
 ; dummy random fitness function to be implemented by students
