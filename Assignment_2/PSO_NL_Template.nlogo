@@ -337,9 +337,11 @@ to-report fittness_function_4 [x y]
   report res
 end
 
-; dummy random fitness function to be implemented by students
+; ackley's function
 to-report fittness_function_5 [x y]
-  report random-normal 0 1;
+  let x1 32 /  max-x * x ; scale x to have a value from -32 to 32
+  let y1 32 /  max-y * y ; scale x to have a value from -32 to 32
+  report 20 * exp(-0.2 * sqrt(((1 / 2 ))*(x1 ^ 2 + y1 ^ 2))) - exp((1 / 2) * ( cos(2 * pi * x1) + cos(2 * pi * y1))) + 20 + exp(1);
 end
 
 ; dummy random fitness function to be implemented by students
