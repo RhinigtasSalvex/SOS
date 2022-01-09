@@ -103,7 +103,8 @@ to initialize-topology
 
   ask patches [
     ;normalize the values to be between 0 and 1
-    set val (val - min-val) / (max-val - min-val)
+    let val-range (max-val - min-val)
+    set val (val - min-val) / val-range
     ; set gray value acording to fitness
     set pcolor scale-color gray val 0.0  1
 
@@ -124,9 +125,13 @@ to initialize-topology
         ; if penalty method apply penalty to value
         if (constraint_handling_method = "Penalty Method")
         [
-          ;set val 0
-          set val (val - r * ((violation_value pxcor  pycor)) ^ 2 )
-          set pcolor scale-color red val 0.0  1
+          let penalty_value 0
+          ifelse (Smooth = TRUE)
+          [set penalty_value smooth_violation_value pxcor  pycor]
+          [set penalty_value violation_value pxcor  pycor]
+
+          set val (val - (r * (penalty_value ^ 2)) )
+          set pcolor scale-color grey val 0.0  1
         ]
       ]
     ]
@@ -311,7 +316,7 @@ end
 to-report fittness_function_1 [x y]
   let x1 5.12 /  max-x * x ; scale x to have a value from -5.12 to 5.12
   let y1 5.12 /  max-y * y ; scale x to have a value from -5.12 to 5.12
-  let res (- (20 + (x1 ^ 2 - 10 * cos(2 * pi * x1)) + (y1 ^ 2 - 10 * cos(2 * pi * y1))) )
+  let res (- (20 + ((x1 ^ 2 - 10 * cos(2 * pi * x1)) + (y1 ^ 2 - 10 * cos(2 * pi * y1)))) )
   report res
 end
 
@@ -329,14 +334,19 @@ to-report fittness_function_3 [x y]
   report ( - (2 * x1 ^ 2 - 1.05 * x1 ^ 4 + (x1 ^ 6) / 6 + x1 * y1 + y1 ^ 2));
 end
 
-; dummy random fitness function to be implemented by students
+; booth's function
 to-report fittness_function_4 [x y]
-  report random-normal 0 1;
+  let x1 10 /  max-x * x ; scale x to have a value from -5.12 to 5.12
+  let y1 10 /  max-y * y ; scale x to have a value from -5.12 to 5.12
+  let res ( - ((x1 + 2 * y1 - 7 ) ^ 2 + (2 * x1 + y1 - 5) ^ 2))
+  report res
 end
 
-; dummy random fitness function to be implemented by students
+; ackley's function
 to-report fittness_function_5 [x y]
-  report random-normal 0 1;
+  let x1 32 /  max-x * x ; scale x to have a value from -32 to 32
+  let y1 32 /  max-y * y ; scale x to have a value from -32 to 32
+  report 20 * exp(-0.2 * sqrt(((1 / 2 ))*(x1 ^ 2 + y1 ^ 2))) - exp((1 / 2) * ( cos(2 * pi * x1) + cos(2 * pi * y1))) + 20 + exp(1);
 end
 
 ; dummy random fitness function to be implemented by students
@@ -356,7 +366,10 @@ end
 
 ; constraint value example
 to-report constrain_value_example [x y]
-  report (x ^ 2 - y ^ 2)
+  let constr-val x ^ 2 - y ^ 2
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 ; implmentation of constraint c8
@@ -366,7 +379,10 @@ end
 
 ; implmentation of constraint c8
 to-report constrain_value_1 [x y]
-  report (sin(8 * y) - sin(8 * x))
+  let constr-val sin(8 * y) - sin(8 * x)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 ; implmentation of constraint c5
@@ -376,17 +392,25 @@ end
 
 ; implmentation of constraint c5
 to-report constrain_value_2 [x y]
-  report (x - y)
+  let constr-val x - y
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
+
 
 ; implmentation of constraint c9
 to-report constrain_3 [x y]
-  report sin(x) * sin(y) < 0.2
+  report (sin(x) * sin(y) < 0.2)
 end
+
 
 ; implmentation of constraint c9
 to-report constrain_value_3 [x y]
-  report 0.2 - sin(x) * sin(y)
+  let constr-val 0.2 - sin(x) * sin(y)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 ; implmentation of constraint c2
@@ -396,7 +420,10 @@ end
 
 ; implmentation of constraint c2
 to-report constrain_value_4 [x y]
-  report ((x - 3) + (y - 3))
+  let constr-val (x - 3) + (y - 3)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 ; implmentation of constraint c6
@@ -406,18 +433,25 @@ end
 
 ; implmentation of constraint c6
 to-report constrain_value_5 [x y]
-  report (y ^ 2 - 10 * x)
+  let constr-val y ^ 2 - 10 * x
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
-; implmentation of constraint c7
+; implmentation of constraint c6
 to-report constrain_6 [x y]
   report (tan(2 * x) < tan(4 * y))
 end
 
-; implmentation of constraint c7
+; implmentation of constraint c6
 to-report constrain_value_6 [x y]
-  report (tan(4 * y) - tan(2 * x))
+  let constr-val tan(4 * y) - tan(2 * x)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
+
 
 ; dummy random constrinat to be implemented by students
 to-report constrain_7 [x y]
@@ -425,18 +459,38 @@ to-report constrain_7 [x y]
 end
 
 
+; implmentation of constraint c7
+to-report constrain_value_7 [x y]
+  report 0
+end
+
+
 to-report constrain_8 [x y]
   ifelse sin(8 * x) < sin(8 * y)
   [report TRUE]
   [report FALSE]
+end
 
+; implmentation of constraint c7
+to-report constrain_value_8 [x y]
+  let constr-val sin(8 * y) - sin(8 * x)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 to-report constrain_9 [x y]
   ifelse sin(x) * sin(y) < 0.2
   [report TRUE]
   [report FALSE]
+end
 
+; implmentation of constraint c7
+to-report constrain_value_9 [x y]
+  let constr-val 0.2 - sin(x) * sin(y)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 to-report constrain_10 [x y]
@@ -446,8 +500,12 @@ to-report constrain_10 [x y]
 
 end
 
+; implmentation of constraint c7
 to-report constrain_value_10 [x y]
-  report (1 - tan(x * y))
+  let constr-val 1 - tan(x * y)
+  ifelse constr-val > 0
+  [report constr-val]
+  [report 0]
 end
 
 
@@ -487,7 +545,7 @@ to-report violates [x y]
 
 end
 
-to-report violation_value [x y]
+to-report smooth_violation_value [x y]
   if ( Constraint = "Constraint 1")
   [report constrain_value_1 x y]
 
@@ -507,20 +565,98 @@ to-report violation_value [x y]
   [report constrain_value_6 x y]
 
   if ( Constraint = "Constraint 7")
-  [report constrain_7 x y]
+  [report constrain_value_7 x y]
 
   if ( Constraint = "Constraint 8")
-  [report constrain_8 x y]
+  [report constrain_value_8 x y]
 
   if ( Constraint = "Constraint 9")
-  [report constrain_9 x y]
+  [report constrain_value_9 x y]
 
   if ( Constraint = "Constraint 10")
   [report constrain_value_10 x y]
 
   if ( Constraint = "Example")
   [report constrain_value_example x y]
+end
 
+to-report violation_value [x y]
+  if ( Constraint = "Constraint 1")
+  [
+    ifelse (constrain_1 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 2")
+  [
+    ifelse (constrain_2 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 3")
+  [
+    ifelse (constrain_3 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 4")
+  [
+    ifelse (constrain_4 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 5")
+  [
+    ifelse (constrain_5 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 6")
+  [
+    ifelse (constrain_6 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 7")
+  [
+    ifelse (constrain_7 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 8")
+  [
+    ifelse (constrain_8 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 9")
+  [
+    ifelse (constrain_9 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Constraint 10")
+  [
+    ifelse (constrain_10 x y)
+    [report 1]
+    [report 0]
+  ]
+
+  if ( Constraint = "Example")
+  [
+    ifelse (constrain_example x y)
+    [report 1]
+    [report 0]
+  ]
 end
 
 to update-highlight
@@ -629,7 +765,7 @@ population-size
 population-size
 1
 100
-35.0
+100.0
 1
 1
 NIL
@@ -644,7 +780,7 @@ personal-confidence
 personal-confidence
 0
 2
-0.6
+1.5
 0.1
 1
 NIL
@@ -659,7 +795,7 @@ swarm-confidence
 swarm-confidence
 0
 2
-1.8
+1.5
 0.1
 1
 NIL
@@ -674,7 +810,7 @@ particle-inertia
 particle-inertia
 0
 1.0
-0.14
+0.9
 0.01
 1
 NIL
@@ -705,7 +841,7 @@ CHOOSER
 trails-mode
 trails-mode
 "None" "Traces"
-1
+0
 
 SLIDER
 320
@@ -716,7 +852,7 @@ particle-speed-limit
 particle-speed-limit
 1
 20
-7.0
+10.0
 1
 1
 NIL
@@ -768,7 +904,7 @@ CHOOSER
 fitness_function
 fitness_function
 "Example function" "Rastrigin function" "Schwefel function" "3-Hump Camel function" "Fitness function 4" "Fitness function 5" "Fitness function 6"
-3
+1
 
 SWITCH
 10
@@ -825,7 +961,7 @@ INPUTBOX
 420
 475
 path-to-save
-filename.txt
+rastrigin_nc_1.txt
 1
 0
 String
@@ -883,7 +1019,7 @@ CHOOSER
 Constraint
 Constraint
 "Example" "Constraint 1" "Constraint 2" "Constraint 3" "Constraint 4" "Constraint 5" "Constraint 6" "Constraint 7" "Constraint 8" "Constraint 9" "Constraint 10"
-10
+6
 
 PLOT
 10
@@ -912,11 +1048,22 @@ r
 r
 0
 1
-0.42
+1.0
 0.01
 1
 NIL
 HORIZONTAL
+
+SWITCH
+10
+165
+115
+198
+Smooth
+Smooth
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1206,7 +1353,120 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 NetLogo 6.2.1
 @#$#@#$#@
 @#$#@#$#@
+1.0
+    org.nlogo.sdm.gui.AggregateDrawing 1
+        org.nlogo.sdm.gui.ConverterFigure "attributes" "attributes" 1 "FillColor" "Color" 130 188 183 149 85 50 50
+            org.nlogo.sdm.gui.WrappedConverter "" ""
 @#$#@#$#@
+<experiments>
+  <experiment name="SI-Rastrigin test-run" repetitions="2" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>iterate</go>
+    <timeLimit steps="1000"/>
+    <metric>global-best-val</metric>
+    <enumeratedValueSet variable="trails-mode">
+      <value value="&quot;Traces&quot;"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="particle-inertia" first="0.1" step="0.1" last="1.5"/>
+    <enumeratedValueSet variable="swarm-confidence">
+      <value value="1.7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="highlight-mode">
+      <value value="&quot;True best&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="constraint_handling_method">
+      <value value="&quot;Rejection Method&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="r">
+      <value value="0.28"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Constraint">
+      <value value="&quot;Constraint 10&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fitness_function">
+      <value value="&quot;Rastrigin function&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Constraints">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="path-to-save">
+      <value value="&quot;rastrigin_nc_1.txt&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population-size">
+      <value value="10"/>
+      <value value="50"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="particle-speed-limit">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="personal-confidence">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="path-to-load">
+      <value value="&quot;filename.txt&quot;"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="SI-Rastrigin exhoustive run without constraints" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>iterate</go>
+    <timeLimit steps="500"/>
+    <metric>global-best-val</metric>
+    <enumeratedValueSet variable="fitness_function">
+      <value value="&quot;Rastrigin function&quot;"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="particle-inertia" first="0.1" step="0.2" last="1"/>
+    <steppedValueSet variable="swarm-confidence" first="0.1" step="0.2" last="1.5"/>
+    <steppedValueSet variable="personal-confidence" first="0.1" step="0.2" last="1.5"/>
+    <steppedValueSet variable="particle-speed-limit" first="1" step="5" last="20"/>
+    <enumeratedValueSet variable="population-size">
+      <value value="10"/>
+      <value value="50"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="highlight-mode">
+      <value value="&quot;None&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="trails-mode">
+      <value value="&quot;None&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Constraints">
+      <value value="false"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="SI-Rastrigin exhoustive run wit constraints" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>iterate</go>
+    <timeLimit steps="500"/>
+    <metric>global-best-val</metric>
+    <enumeratedValueSet variable="fitness_function">
+      <value value="&quot;Rastrigin function&quot;"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="particle-inertia" first="0.1" step="0.2" last="1"/>
+    <steppedValueSet variable="swarm-confidence" first="0.1" step="0.2" last="1.5"/>
+    <steppedValueSet variable="personal-confidence" first="0.1" step="0.2" last="1.5"/>
+    <steppedValueSet variable="particle-speed-limit" first="1" step="5" last="20"/>
+    <enumeratedValueSet variable="population-size">
+      <value value="10"/>
+      <value value="50"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Constraints">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Constraint">
+      <value value="&quot;Constraint 1&quot;"/>
+      <value value="&quot;Constraint 2&quot;"/>
+      <value value="&quot;Constraint 3&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="highlight-mode">
+      <value value="&quot;None&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="trails-mode">
+      <value value="&quot;None&quot;"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
